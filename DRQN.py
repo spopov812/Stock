@@ -1,23 +1,24 @@
 import numpy as np
-from keras.layers import Dense, LSTM, Flatten
+from keras.layers import Dense
 from keras import Sequential
-from collections import deque
-import random
+from urllib.request import urlopen
+import pandas as pd
 
 
 class TrainingAgent:
 
+    # constructor
     def __init__(self):
 
-        self.memory = deque(300)
+        self.memory = []
 
         # learning hyperparameters
         self.gamma = 0.85   # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.995 # exploration decay rate
         self.learning_rate = 1e-4
-        self.batch_size = 64
+        self.batch_size = 72
 
         self.price_window = 30
 
@@ -25,6 +26,7 @@ class TrainingAgent:
 
         self.price_history = []
 
+    # creates neural network for approximating q function
     def build_model(self):
 
         model = Sequential()
@@ -37,7 +39,7 @@ class TrainingAgent:
 
         model.compile(
 
-            optimizer="adam", lr=self.learning_rate,
+            optimizer="sgd", lr=self.learning_rate,
             loss="mse",
             metrics=["mse"]
 
@@ -45,10 +47,12 @@ class TrainingAgent:
 
         return model
 
+    # appends important data into memory
     def remember(self, state, next_state, reward, action):
 
         self.memory.append((state, next_state, reward, action))
 
+    # replays and learns from memories
     def replay(self):
 
         minibatch = self.memory[-self.batch_size:]
@@ -66,6 +70,7 @@ class TrainingAgent:
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
+    # performs action through neural network or random value
     def action(self, state):
 
         if np.random.rand() <= self.epsilon:
@@ -76,10 +81,12 @@ class TrainingAgent:
 
         return np.argmax(actions)
 
+    # returns price at beginning of sequence
     def get_price_window(self):
 
         return self.price_history[-self.price_window]
 
+    # calculates reward function
     def calculate_reward(self, action):
 
         t_price, t_minus_one_price = self.price_history[-1], self.price_history[-2]
@@ -91,6 +98,7 @@ class TrainingAgent:
 
         return left_half * right_half
 
+    # processes historical price data for correct input into neural network
     def process_x_data(self):
 
         x_data = []
@@ -103,5 +111,19 @@ class TrainingAgent:
 
         return x_data
 
-    def train(self):
+    # fetches .csv data
+    def get_data(self):
+
+        key = "V37AF2MUTPQTINXB"
+
+        query = "https://www.alphavantage.co/query?function=DIGITAL_CURRENCY_DAILY&symbol=BTC&market=" \
+                "USD&apikey=%s&datatype=csv" % key
+
+        raw_data = pd.read_csv(urlopen(query))
+
+        raw_data.to_csv("data.csv")
+
+    # function that starts q learning
+    def model_init(self):
+
 

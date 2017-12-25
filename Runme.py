@@ -2,11 +2,12 @@ from Preprocessing import *
 from FiveDayModels import train_lstm_models, train_final_model, five_day_prediction
 import os
 import tensorflow as tf
+from DRQN import TrainingAgent
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-option = input("5 day prediction(5), DRQN trader(DRQN)- ")
+option = input("5 day prediction(5), DRQN trader(DRQN)- ").lower()
 
 if option == "5":
 
@@ -37,11 +38,14 @@ if option == "5":
 
     five_day_prediction(lstm_models, final_model, one_x, two_x, four_x, eight_x, twelve_x, twentyfour_x, fourtyeight_x)
 
-elif option == "DRQN":
+elif option == "drqn":
 
-    option = input("Train or run? ")
+    option = input("Train or run? ").lower()
 
     if option == "train":
-        print("TODO")
+
+        agent = TrainingAgent()
+
+        agent.model_init()
     elif option == "run":
         print("TODO")
